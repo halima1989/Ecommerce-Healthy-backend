@@ -1,0 +1,124 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id             String          @id @default(uuid())
+  email          String          @unique
+  hash           String
+  name           String?
+  address        String
+  roleId         String      
+  isActive       Boolean @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  orders         Order[]
+  paymentMethods PaymentMethod[]
+  role           Role            @relation(fields: [roleId], references: [id])
+  activationTokens ActivationToken[]  
+
+}
+
+model ActivationToken {
+  id        String      @id @default(uuid())
+  token     String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  
+  }
+
+model Product {
+  id            String       @id @default(uuid())
+  name          String
+  description   String
+  price         Float
+  imageUrl      String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  categoryId    String
+  category      Category     @relation(fields: [categoryId], references: [id])
+  orderItems    OrderItem[]
+}
+
+model Category {
+  id         String    @id @default(uuid())
+  name       String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  products   Product[]
+}
+
+model Role {
+  id         String     @id @default(uuid())
+  name       String     
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  users      User[]
+}
+
+model Order {
+  id          String       @id @default(uuid())
+  totalAmount Float
+  status      OrderStatus  @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  orderItems  OrderItem[]
+  payment     Payment?
+}
+
+model OrderItem {
+  id        String    @id @default(uuid())
+  quantity  Int
+  price     Float
+  productId String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  product   Product   @relation(fields: [productId], references: [id])
+  orderId   String
+  order     Order     @relation(fields: [orderId], references: [id])
+}
+
+model Payment {
+  id        String        @id @default(uuid())
+  amount    Float
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  status    String      
+  methodId  String
+  method    PaymentMethod @relation(fields: [methodId], references: [id])
+  orderId   String        @unique
+  order     Order         @relation(fields: [orderId], references: [id])
+}
+
+model PaymentMethod {
+  id        String     @id @default(uuid())
+  type      String
+  details   String
+  userId    String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  user      User       @relation(fields: [userId], references: [id])
+  payments  Payment[]
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+
